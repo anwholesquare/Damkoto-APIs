@@ -1,0 +1,211 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "mysql"
+  url      = env("DATABASE_URL")
+}
+
+model Bazarlist {
+  id           Int      @id @default(autoincrement())
+  user_id      Int?
+  name         String?  @db.VarChar(100)
+  is_completed Int      @default(0) @db.TinyInt
+  created_at   DateTime @default(now()) @db.Timestamp(0)
+  updated_at   DateTime @default(now()) @db.Timestamp(0)
+  Users        Users?   @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "bazarlist_ibfk_1")
+
+  @@index([user_id], map: "user_id")
+}
+
+model Bazarlist_items {
+  id       Int      @id @default(autoincrement())
+  item_id  Int?
+  quantity Int?
+  marked   Boolean? @default(false)
+  Items    Items?   @relation(fields: [item_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "bazarlist_items_ibfk_1")
+
+  @@index([item_id], map: "item_id")
+}
+
+model Category {
+  id             Int              @id @default(autoincrement())
+  name           String?          @db.VarChar(100)
+  icon           String?          @db.VarChar(255)
+  slug           String?          @unique(map: "slug") @db.VarChar(50)
+  created_at     DateTime         @default(now()) @db.Timestamp(0)
+  updated_at     DateTime         @default(now()) @db.Timestamp(0)
+  Items_category Items_category[]
+}
+
+model Comments {
+  id                Int                 @id @default(autoincrement())
+  user_id           Int?
+  reply_id          Int?
+  comment           String              @db.VarChar(250)
+  likes             Int?                @default(0)
+  dislikes          Int?                @default(0)
+  created_at        DateTime            @default(now()) @db.Timestamp(0)
+  updated_at        DateTime            @default(now()) @db.Timestamp(0)
+  Users             Users?              @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "comments_ibfk_1")
+  Comments          Comments?           @relation("CommentsToComments", fields: [reply_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "comments_ibfk_2")
+  other_Comments    Comments[]          @relation("CommentsToComments")
+  Items_comments    Items_comments[]
+  Newsfeed_comments Newsfeed_comments[]
+
+  @@index([reply_id], map: "reply_id")
+  @@index([user_id], map: "user_id")
+}
+
+model Items {
+  id              Int               @id @default(autoincrement())
+  name            String            @db.VarChar(200)
+  description     String            @db.VarChar(550)
+  unit            String            @db.VarChar(50)
+  slug            String            @db.VarChar(50)
+  data            String?           @db.LongText
+  created_at      DateTime          @default(now()) @db.Timestamp(0)
+  updated_at      DateTime          @default(now()) @db.Timestamp(0)
+  Bazarlist_items Bazarlist_items[]
+  Items_category  Items_category[]
+  Items_comments  Items_comments[]
+  Items_favourite Items_favourite[]
+  Items_image     Items_image[]
+  Items_price     Items_price[]
+}
+
+model Items_category {
+  id          Int       @id @default(autoincrement())
+  item_id     Int?
+  category_id Int?
+  Items       Items?    @relation(fields: [item_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "items_category_ibfk_1")
+  Category    Category? @relation(fields: [category_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "items_category_ibfk_2")
+
+  @@index([category_id], map: "category_id")
+  @@index([item_id], map: "item_id")
+}
+
+model Items_comments {
+  id         Int       @id @default(autoincrement())
+  item_id    Int?
+  comment_id Int?
+  Items      Items?    @relation(fields: [item_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "items_comments_ibfk_1")
+  Comments   Comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "items_comments_ibfk_2")
+
+  @@index([comment_id], map: "comment_id")
+  @@index([item_id], map: "item_id")
+}
+
+model Items_favourite {
+  id      Int    @id @default(autoincrement())
+  item_id Int?
+  user_id Int?
+  Items   Items? @relation(fields: [item_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "items_favourite_ibfk_1")
+  Users   Users? @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "items_favourite_ibfk_2")
+
+  @@index([item_id], map: "item_id")
+  @@index([user_id], map: "user_id")
+}
+
+model Items_image {
+  id         Int     @id @default(autoincrement())
+  item_id    Int?
+  image_link String? @db.VarChar(255)
+  Items      Items?  @relation(fields: [item_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "items_image_ibfk_1")
+
+  @@index([item_id], map: "item_id")
+}
+
+model Items_price {
+  id        Int                  @id @default(autoincrement())
+  item_id   Int?
+  min_price Decimal?             @db.Decimal(10, 2)
+  max_price Decimal?             @db.Decimal(10, 2)
+  date      DateTime             @default(now()) @db.Date
+  division  Items_price_division @default(Dhaka)
+  Items     Items?               @relation(fields: [item_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "items_price_ibfk_1")
+
+  @@index([item_id], map: "item_id")
+}
+
+model Newsfeed {
+  id                Int                 @id @default(autoincrement())
+  user_id           Int?
+  image             String?             @db.VarChar(255)
+  content           String?             @db.Text
+  created_at        DateTime            @default(now()) @db.Timestamp(0)
+  updated_at        DateTime            @default(now()) @db.Timestamp(0)
+  Users             Users?              @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "newsfeed_ibfk_1")
+  Newsfeed_comments Newsfeed_comments[]
+
+  @@index([user_id], map: "user_id")
+}
+
+model Newsfeed_comments {
+  id          Int       @id @default(autoincrement())
+  newsfeed_id Int?
+  comment_id  Int?
+  Newsfeed    Newsfeed? @relation(fields: [newsfeed_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "newsfeed_comments_ibfk_1")
+  Comments    Comments? @relation(fields: [comment_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "newsfeed_comments_ibfk_2")
+
+  @@index([comment_id], map: "comment_id")
+  @@index([newsfeed_id], map: "newsfeed_id")
+}
+
+model Users {
+  id              Int               @id @default(autoincrement())
+  role            Users_role        @default(user)
+  phone           String            @db.VarChar(15)
+  name            String            @db.VarChar(50)
+  gravatar        String            @db.VarChar(50)
+  division        Users_division    @default(Dhaka)
+  data            String            @db.LongText
+  created_at      DateTime          @default(now()) @db.DateTime(0)
+  updated_at      DateTime          @default(now()) @db.DateTime(0)
+  Bazarlist       Bazarlist[]
+  Comments        Comments[]
+  Items_favourite Items_favourite[]
+  Newsfeed        Newsfeed[]
+  Users_session   Users_session[]
+}
+
+model Users_session {
+  id            Int      @id @default(autoincrement())
+  user_id       Int
+  session_token String   @unique(map: "session_token") @db.VarChar(255)
+  ip_address    String?  @db.VarChar(45)
+  user_agent    String?  @db.Text
+  created_at    DateTime @default(now()) @db.Timestamp(0)
+  expires_at    DateTime @default(dbgenerated("('0000-00-00 00:00:00')")) @db.Timestamp(0)
+  Users         Users    @relation(fields: [user_id], references: [id], onDelete: Cascade, onUpdate: Restrict, map: "users_session_ibfk_1")
+
+  @@index([user_id], map: "user_id")
+}
+
+enum Users_role {
+  admin
+  user
+}
+
+enum Users_division {
+  Barishal
+  Chattogram
+  Dhaka
+  Khulna
+  Rajshahi
+  Rangpur
+  Mymensingh
+  Sylhet
+}
+
+enum Items_price_division {
+  Barishal
+  Chattogram
+  Dhaka
+  Khulna
+  Rajshahi
+  Rangpur
+  Mymensingh
+  Sylhet
+}
